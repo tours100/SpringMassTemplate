@@ -7,7 +7,7 @@ using UnityEngine;
 
 public class BParticleSimMesh : MonoBehaviour
 {
-    public struct BSpring
+    public struct BSpring //for cube
     {
         public float kd;                        // damping coefficient
         public float ks;                        // spring coefficient
@@ -15,7 +15,7 @@ public class BParticleSimMesh : MonoBehaviour
         public int attachedParticle;            // index of the attached other particle (use me wisely to avoid doubling springs and sprign calculations)
     }
 
-    public struct BContactSpring
+    public struct BContactSpring // for ground
     {
         public float kd;                        // damping coefficient
         public float ks;                        // spring coefficient
@@ -29,7 +29,7 @@ public class BParticleSimMesh : MonoBehaviour
         public Vector3 velocity;                // velocity information
         public float mass;                      // mass information
         public BContactSpring contactSpring;    // Special spring for contact forces
-        public bool attachedToContact;          // is thi sparticle currently attached to a contact (ground plane contact)
+        public bool attachedToContact;          // is this particle currently attached to a contact (ground plane contact)
         public List<BSpring> attachedSprings;   // all attached springs, as a list in case we want to modify later fast
         public Vector3 currentForces;           // accumulate forces here on each step        
     }
@@ -62,7 +62,14 @@ public class BParticleSimMesh : MonoBehaviour
      * - array of particles (BParticle[])
      * - the plane (BPlane)
      ***/
-
+    public Transform groundPlane;
+    public bool handlePlaneCollisions;
+    public float particleMass;
+    public bool useGravity;
+    public Vector3 gravityValue;
+    private Mesh mesh;
+    private BParticle[] particleArray;
+    private BPlane plane;
 
 
     /// <summary>
@@ -79,9 +86,40 @@ public class BParticleSimMesh : MonoBehaviour
     ///         on initialization. Then when updating you need to remember a particular trick about the spring forces
     ///         generated between particles. 
     /// </summary>
+    
+    void InitParticles()
+    {
+        mesh =  GetComponent<MeshFilter>().mesh;
+        List<Vector3> verticices = new List<Vector3>();
+        mesh.GetVertices(verticices);
+        particleArray = new BParticle[verticices.Count];
+        for (var i = 0; i < verticices.Count; i++)
+        { 
+            BParticle temp = new BParticle();
+            temp.position =  transform.TransformPoint(verticices[i]); // move to global coordinates
+            temp.velocity = new Vector3(0,0,0);
+            temp.mass = particleMass;
+            temp.contactSpring = new BContactSpring();
+            temp.attachedToContact =  false;
+            temp.attachedSprings = new List<BSpring>();
+            temp.currentForces = new Vector3(0,0,0);
+            particleArray[i] = temp;
+        }
+
+        //get tryangles
+        // loop through them
+        // pick a point, get distance from other points, then make a spring for each
+        // get distance between other two points and create thier spring
+        // log springs using indexes in particle array
+
+        int[] tri = mesh.triangles;
+
+        Debug.Log(tri);
+    }
+
     void Start()
     {
-
+        InitParticles();
     }
 
 
